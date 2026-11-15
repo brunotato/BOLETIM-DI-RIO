@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boletim Diário e Checklist Automotivo — Power Electronic</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+:root{
+  --primary:#1e40af; --primary-dark:#1e3a8a; --primary-light:#3b82f6;
+  --success:#16a34a; --success-dark:#15803d;
+  --danger:#dc2626; --danger-dark:#b91c1c;
+  --warning:#ea580c; --info:#0891b2;
+  --bg:#f1f5f9; --card:#ffffff; --text:#0f172a; --text-light:#64748b;
+  --border:#e2e8f0; --border-strong:#cbd5e1;
+  --shadow-sm:0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04);
+  --shadow-md:0 4px 12px rgba(15,23,42,.08), 0 2px 4px rgba(15,23,42,.04);
+  --radius:10px; --radius-sm:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  background:var(--bg); color:var(--text); padding:16px;
+  max-width:840px; margin:0 auto; min-height:100vh;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:15px; line-height:1.5;
+}
+
+/* ---------- Cabeçalho ---------- */
+.cabecalho{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  color:#fff; padding:20px 16px; border-radius:var(--radius);
+  margin-bottom:18px; text-align:center; box-shadow:var(--shadow-md);
+}
+.cabecalho h2{font-size:20px; letter-spacing:.5px; margin-bottom:6px;}
+.cabecalho p{font-size:12.5px; opacity:.92; line-height:1.5;}
+
+h1{text-align:center; font-size:19px; margin-bottom:18px; letter-spacing:.3px; color:var(--text);}
+h3{
+  font-size:13px; text-transform:uppercase; letter-spacing:.8px; color:var(--primary);
+  margin-bottom:12px; padding-bottom:8px; border-bottom:2px solid var(--border);
+  font-weight:700;
+}
+
+/* ---------- Cards ---------- */
+.box{
+  background:var(--card); padding:18px; border-radius:var(--radius);
+  margin-bottom:14px; box-shadow:var(--shadow-sm); border:1px solid var(--border);
+}
+
+/* ---------- Grid / Inputs ---------- */
+.linha{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:10px 0;}
+.grupo label{font-size:12.5px; font-weight:600; color:var(--text-light); display:block; margin-bottom:5px;}
+input, select, textarea{
+  width:100%; padding:10px 12px; border:1.5px solid var(--border-strong);
+  border-radius:var(--radius-sm); font-size:14.5px; color:var(--text);
+  background:#fff; transition:border-color .15s, box-shadow .15s; font-family:inherit;
+}
+input:focus, select:focus, textarea:focus{
+  outline:none; border-color:var(--primary-light);
+  box-shadow:0 0 0 3px rgba(59,130,246,.15);
+}
+input.error, textarea.error{border-color:var(--danger); background:#fef2f2;}
+input[readonly]{background:#f8fafc; color:var(--text-light); font-weight:600;}
+textarea{resize:vertical; min-height:100px;}
+
+/* ---------- Combustível ---------- */
+.combustivel-grid{display:flex; flex-wrap:wrap; gap:8px;}
+.combustivel-grid label{
+  display:flex; align-items:center; gap:6px; padding:9px 14px;
+  border:1.5px solid var(--border-strong); border-radius:var(--radius-sm);
+  cursor:pointer; font-size:13.5px; font-weight:500; transition:all .15s; user-select:none;
+}
+.combustivel-grid label:hover{border-color:var(--primary-light); background:#f8fafc;}
+.combustivel-grid input{display:none;}
+.combustivel-grid input:checked + span{color:var(--primary); font-weight:700;}
+.combustivel-grid label:has(input:checked){
+  background:#eff6ff; border-color:var(--primary); color:var(--primary);
+}
+
+/* ---------- Checklist (toggle OK/NC) ---------- */
+.checklist{display:flex; flex-direction:column; gap:6px;}
+.checkLinha{
+  display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center;
+  padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border);
+  transition:background .15s;
+}
+.checkLinha:hover{background:#f8fafc;}
+.checkLinha.has-nc{background:#fef2f2; border-color:#fecaca;}
+.checkLinha.has-ok{background:#f0fdf4; border-color:#bbf7d0;}
+.checkLinha .textoItem{font-size:13.5px; line-height:1.4;}
+.toggle-group{display:flex; gap:6px; flex-shrink:0;}
+.toggle{
+  min-width:48px; padding:7px 12px; border:1.5px solid var(--border-strong);
+  background:#fff; border-radius:var(--radius-sm); cursor:pointer;
+  font-size:12.5px; font-weight:700; color:var(--text-light); transition:all .15s;
+}
+.toggle:hover{border-color:var(--primary-light);}
+.toggle.ok.active{background:var(--success); border-color:var(--success); color:#fff;}
+.toggle.nc.active{background:var(--danger); border-color:var(--danger); color:#fff;}
+
+/* ---------- Botões ---------- */
+.botoes{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px;}
+button{
+  padding:11px 18px; border:none; border-radius:var(--radius-sm); cursor:pointer;
+  font-size:14px; font-weight:600; color:#fff; background:var(--primary);
+  transition:all .15s; display:inline-flex; align-items:center; gap:6px;
+  box-shadow:var(--shadow-sm); font-family:inherit;
+}
+button:hover{background:var(--primary-dark); transform:translateY(-1px); box-shadow:var(--shadow-md);}
+button:active{transform:translateY(0);}
+button.secundario{background:#64748b;}
+button.secundario:hover{background:#475569;}
+button.perigo{background:var(--danger);}
+button.perigo:hover{background:var(--danger-dark);}
+button.pdf{background:var(--success);}
+button.pdf:hover{background:var(--success-dark);}
+button.pequeno{padding:7px 12px; font-size:12.5px;}
+
+/* ---------- Telas ---------- */
+.tela{display:none; animation:fadeIn .25s ease;}
+.tela.ativa{display:block;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+/* ---------- Histórico ---------- */
+.itemHistorico{
+  border:1px solid var(--border); padding:14px; margin:10px 0;
+  border-radius:var(--radius-sm); background:#fff; box-shadow:var(--shadow-sm);
+}
+.itemHistorico .cabecalhoItem{
+  display:flex; justify-content:space-between; align-items:center;
+  flex-wrap:wrap; gap:8px; margin-bottom:10px; padding-bottom:10px;
+  border-bottom:1px solid var(--border);
+}
+.itemHistorico .dataItem{font-size:13px; color:var(--text-light); font-weight:600;}
+.itemHistorico .resumoItem{font-size:13px; color:var(--text); line-height:1.5;}
+.itemHistorico .resumoItem strong{color:var(--primary);}
+.itemHistorico .acoesItem{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
+.badge{
+  display:inline-block; padding:2px 8px; border-radius:20px;
+  font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px;
+}
+.badge.ok{background:#dcfce7; color:var(--success-dark);}
+.badge.nc{background:#fee2e2; color:var(--danger-dark);}
+.badge.vazio{background:#f1f5f9; color:var(--text-light);}
+.vazioMsg{
+  text-align:center; padding:40px 20px; color:var(--text-light);
+  background:#fff; border-radius:var(--radius); border:2px dashed var(--border);
+  font-size:14px;
+}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed; top:20px; left:50%; transform:translateX(-50%) translateY(-100px);
+  padding:12px 22px; border-radius:var(--radius-sm); color:#fff; font-weight:600;
+  font-size:14px; box-shadow:0 8px 24px rgba(0,0,0,.15); z-index:9999;
+  transition:transform .3s ease; opacity:0; max-width:90%;
+}
+.toast.show{transform:translateX(-50%) translateY(0); opacity:1;}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+.toast.info{background:var(--info);}
+.toast.warning{background:var(--warning);}
+
+/* ---------- Área de impressão/PDF ---------- */
+#areaImpressao{display:none;}
+.pdfDoc{
+  font-family:Arial,sans-serif; color:#000; padding:20px; background:#fff;
+}
+.pdfDoc h2{text-align:center; font-size:16px; margin-bottom:4px;}
+.pdfDoc .sub{text-align:center; font-size:10px; color:#444; margin-bottom:14px;}
+.pdfDoc h3{
+  font-size:12px; background:#1e40af; color:#fff; padding:5px 10px;
+  margin:16px 0 8px; border-radius:3px; text-transform:uppercase; letter-spacing:.5px;
+  border:none;
+}
+.pdfDoc table{width:100%; border-collapse:collapse; font-size:11px; margin-bottom:10px;}
+.pdfDoc table th, .pdfDoc table td{border:1px solid #ccc; padding:5px 8px; text-align:left;}
+.pdfDoc table th{background:#f1f5f9; font-weight:700; width:35%;}
+.pdfDoc .checkTable td{padding:4px 8px;}
+.pdfDoc .status-OK{color:#15803d; font-weight:700;}
+.pdfDoc .status-NC{color:#b91c1c; font-weight:700;}
+.pdfDoc .obsBox{
+  border:1px solid #ccc; padding:10px; min-height:70px; font-size:11px;
+  white-space:pre-wrap; border-radius:3px;
+}
+.pdfDoc .assinatura{margin-top:30px; padding-top:8px; border-top:1px solid #000; text-align:center; font-size:10px;}
+
+/* ---------- Responsivo ---------- */
+@media (max-width:520px){
+  body{padding:10px;}
+  .checkLinha{grid-template-columns:1fr;}
+  .toggle-group{justify-content:flex-end;}
+  .botoes button{flex:1 1 100%; justify-content:center;}
+  .cabecalho h2{font-size:17px;}
+  .cabecalho p{font-size:11.5px;}
+}
+
+@media print{
+  body{background:#fff; padding:0; max-width:none;}
+  .tela, .botoes, .cabecalho, .toast{display:none !important;}
+  #areaImpressao{display:block !important;}
+  .pdfDoc{page-break-after:always;}
+}
+</style>
+</head>
+<body>
+
+<!-- CABEÇALHO -->
+<div class="cabecalho">
+  <h2>⚡ POWER ELECTRONIC ⚡</h2>
+  <p>Auto Elétrica e Automotivo • Rua Comandante Salgado, 1301 — Sorocaba/SP<br>(15) 97404-3309</p>
+</div>
+
+<!-- MENU -->
+<div class="botoes" style="justify-content:center;margin-bottom:14px;">
+  <button onclick="abrirTela('telaFormulario')">📝 Novo Boletim</button>
+  <button class="secundario" onclick="abrirTela('telaHistorico')">📚 Histórico</button>
+</div>
+
+<!-- TELA FORMULÁRIO -->
+<div id="telaFormulario" class="tela ativa">
+  <h1>BOLETIM DIÁRIO E CHECKLIST AUTOMOTIVO</h1>
+
+  <div class="box">
+    <h3>Identificação</h3>
+    <div class="linha">
+      <div class="grupo"><label>Data *</label><input type="date" id="data"></div>
+      <div class="grupo"><label>Hora Início</label><input type="time" id="horaInicio"></div>
+      <div class="grupo"><label>Hora Fim</label><input type="time" id="horaFim"></div>
+    </div>
+    <div class="linha">
+      <div class="grupo"><label>Motorista *</label><input type="text" id="motorista" placeholder="Nome completo"></div>
+    </div>
+    <div class="linha">
+      <div class="grupo"><label>Veículo / Modelo *</label><input type="text" id="veiculo" placeholder="Ex.: Fiat Strada"></div>
+      <div class="grupo"><label>Placa *</label><input type="text" id="placa" placeholder="ABC-1D23" maxlength="10"></div>
+    </div>
+    <div class="linha">
+      <div class="grupo"><label>Hodômetro Inicial (km)</label><input type="number" id="kmInicial" placeholder="0" min="0"></div>
+      <div class="grupo"><label>Hodômetro Final (km)</label><input type="number" id="kmFinal" placeholder="0" min="0"></div>
+      <div class="grupo"><label>KM Rodada no Dia</label><input type="number" id="kmRodadaDia" readonly placeholder="Auto"></div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Nível de Combustível</h3>
+    <div class="combustivel-grid">
+      <label><input type="radio" name="combustivel" value="Vazio"><span>Vazio</span></label>
+      <label><input type="radio" name="combustivel" value="1/4"><span>1/4</span></label>
+      <label><input type="radio" name="combustivel" value="1/2"><span>1/2</span></label>
+      <label><input type="radio" name="combustivel" value="3/4"><span>3/4</span></label>
+      <label><input type="radio" name="combustivel" value="Cheio"><span>Cheio</span></label>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Checklist de Inspeção</h3>
+    <div class="checklist" id="checklistContainer"><!-- preenchido por JS --></div>
+  </div>
+
+  <div class="box">
+    <h3>Observações / Ações Corretivas</h3>
+    <p style="font-size:12.5px;color:var(--text-light);margin-bottom:8px;">
+      Obrigatório detalhar caso algum item tenha sido marcado como <strong style="color:var(--danger);">NC</strong>.
+    </p>
+    <textarea id="observacoes" placeholder="Descreva aqui as observações, pendências ou ações corretivas..."></textarea>
+  </div>
+
+  <div class="botoes">
+    <button onclick="salvarBoletim()">💾 Salvar Boletim</button>
+    <button class="secundario" onclick="copiarBoletimAtual()">📋 Copiar WhatsApp</button>
+    <button class="pdf" onclick="gerarPDFAtual()">📄 Gerar PDF</button>
+    <button class="secundario" onclick="limparFormulario()">🧹 Limpar</button>
+  </div>
+</div>
+
+<!-- TELA HISTÓRICO -->
+<div id="telaHistorico" class="tela">
+  <h1>📚 Histórico de Boletins</h1>
+
+  <div class="box">
+    <div class="linha" style="margin:0;">
+      <div class="grupo" style="grid-column:1/-1;">
+        <label>🔍 Buscar (motorista, placa, veículo, data)</label>
+        <input type="text" id="buscaHistorico" placeholder="Digite para filtrar..." oninput="carregarHistorico()">
+      </div>
+    </div>
+    <div class="botoes">
+      <button class="perigo" onclick="apagarTodoHistorico()">🗑️ Apagar Todo Histórico</button>
+    </div>
+  </div>
+
+  <div id="listaHistorico"></div>
+</div>
+
+<!-- ÁREA OCULTA PDF/IMPRESSÃO -->
+<div id="areaImpressao"></div>
+
+<script>
+/* ============================================================
+   DADOS E CONSTANTES
+   ============================================================ */
+const CHECKLIST_ITEMS = [
+  { id:'oleo',          label:'Óleo do motor (nível e período de troca)' },
+  { id:'arrefecimento', label:'Líquido de arrefecimento (reservatório/radiador)' },
+  { id:'farois',        label:'Faróis (baixo e alto) e lanternas' },
+  { id:'setas',         label:'Setas direcionais e pisca-alerta' },
+  { id:'freio',         label:'Luzes de freio e break-light' },
+  { id:'luzRe',         label:'Luz de ré (e sinal sonoro, se houver)' },
+  { id:'painel',        label:'Luzes do painel (alerta de anomalias)' },
+  { id:'cinto',         label:'Cintos de segurança (funcionamento e travas)' },
+  { id:'kit',           label:'Kit de emergência (macaco, triângulo e chave de roda)' },
+  { id:'extintor',      label:'Extintor de incêndio (validade e pressão)' },
+  { id:'palheta',       label:'Palhetas do limpador de para-brisa' },
+  { id:'buzina',        label:'Buzina e espelhos retrovisores' },
+  { id:'vidro',         label:'Para-brisa e vidros (ausência de trincas)' },
+  { id:'lataria',       label:'Lataria (ausência de novos riscos/amassados)' },
+  { id:'limpeza',       label:'Limpeza interna e externa do veículo' },
+];
+
+const STORAGE_KEY = 'powerElectronicBoletins';
+
+/* ============================================================
+   INICIALIZAÇÃO
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  renderizarChecklist();
+  definirDataHoje();
+  configurarCalculoKm();
+  configurarMascaraPlaca();
+});
+
+function renderizarChecklist(){
+  const container = document.getElementById('checklistContainer');
+  container.innerHTML = CHECKLIST_ITEMS.map(item => `
+    <div class="checkLinha" id="linha-${item.id}">
+      <div class="textoItem">${item.label}</div>
+      <div class="toggle-group">
+        <button type="button" class="toggle ok" data-item="${item.id}" data-value="OK">OK</button>
+        <button type="button" class="toggle nc" data-item="${item.id}" data-value="NC">NC</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.toggle').forEach(btn => {
+    btn.addEventListener('click', () => alternarToggle(btn));
+  });
+}
+
+function alternarToggle(btn){
+  const item = btn.dataset.item;
+  const linha = document.getElementById(`linha-${item}`);
+  const todos = linha.querySelectorAll('.toggle');
+  const jaAtivo = btn.classList.contains('active');
+
+  todos.forEach(b => b.classList.remove('active'));
+  linha.classList.remove('has-ok','has-nc');
+
+  if(!jaAtivo){
+    btn.classList.add('active');
+    linha.classList.add(btn.classList.contains('ok') ? 'has-ok' : 'has-nc');
+  }
+}
+
+function definirDataHoje(){
+  const d = new Date();
+  const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  document.getElementById('data').value = iso;
+  document.getElementById('horaInicio').value = String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+function configurarCalculoKm(){
+  const kmIni = document.getElementById('kmInicial');
+  const kmFim = document.getElementById('kmFinal');
+  const kmDia = document.getElementById('kmRodadaDia');
+
+  const calcular = () => {
+    const ini = parseFloat(kmIni.value) || 0;
+    const fim = parseFloat(kmFim.value) || 0;
+    kmDia.value = (fim > ini) ? (fim - ini).toFixed(0) : '';
+  };
+  kmIni.addEventListener('input', calcular);
+  kmFim.addEventListener('input', calcular);
+}
+
+function configurarMascaraPlaca(){
+  const placa = document.getElementById('placa');
+  placa.addEventListener('input', e => {
+    e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,'').slice(0,8);
+  });
+}
+
+/* ============================================================
+   NAVEGAÇÃO
+   ============================================================ */
+function abrirTela(id){
+  document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+  document.getElementById(id).classList.add('ativa');
+  window.scrollTo({ top:0, behavior:'smooth' });
+  if(id === 'telaHistorico') carregarHistorico();
+}
+
+/* ============================================================
+   COLETA E MONTAGEM DE DADOS
+   ============================================================ */
+function coletarBoletim(){
+  const checklist = {};
+  CHECKLIST_ITEMS.forEach(item => {
+    const ativo = document.querySelector(`.toggle[data-item="${item.id}"].active`);
+    checklist[item.id] = ativo ? ativo.dataset.value : null;
+  });
+
+  const combSelecionado = document.querySelector('input[name="combustivel"]:checked');
+
+  return {
+    id: Date.now(),
+    dataHora: new Date().toISOString(),
+    identificacao: {
+      data: document.getElementById('data').value,
+      horaInicio: document.getElementById('horaInicio').value,
+      horaFim: document.getElementById('horaFim').value,
+      motorista: document.getElementById('motorista').value.trim(),
+      veiculo: document.getElementById('veiculo').value.trim(),
+      placa: document.getElementById('placa').value.trim(),
+      kmInicial: document.getElementById('kmInicial').value,
+      kmFinal: document.getElementById('kmFinal').value,
+      kmRodadaDia: document.getElementById('kmRodadaDia').value,
+    },
+    combustivel: combSelecionado ? combSelecionado.value : '',
+    checklist,
+    observacoes: document.getElementById('observacoes').value.trim(),
+  };
+}
+
+/* ============================================================
+   VALIDAÇÃO
+   ============================================================ */
+function validarBoletim(b){
+  const erros = [];
+  const obrigatorios = [
+    ['motorista','Motorista'],
+    ['veiculo','Veículo / Modelo'],
+    ['placa','Placa'],
+    ['data','Data'],
+  ];
+  document.querySelectorAll('input').forEach(i => i.classList.remove('error'));
+
+  obrigatorios.forEach(([campo, nome]) => {
+    if(!b.identificacao[campo]){
+      erros.push(`Preencha o campo: ${nome}`);
+      document.getElementById(campo)?.classList.add('error');
+    }
+  });
+
+  const naoPreenchidos = CHECKLIST_ITEMS.filter(i => !b.checklist[i.id]);
+  if(naoPreenchidos.length > 0){
+    erros.push(`${naoPreenchidos.length} item(ns) do checklist sem OK ou NC.`);
+  }
+
+  const temNC = Object.values(b.checklist).includes('NC');
+  if(temNC && !b.observacoes){
+    erros.push('Existem itens NC. Detalhe as observações/ações corretivas.');
+    document.getElementById('observacoes').classList.add('error');
+  }
+  return erros;
+}
+
+/* ============================================================
+   SALVAR / LIMPAR
+   ============================================================ */
+function salvarBoletim(){
+  const boletim = coletarBoletim();
+  const erros = validarBoletim(boletim);
+
+  if(erros.length > 0){
+    mostrarToast('⚠️ ' + erros[0], 'warning');
+    return;
+  }
+
+  const lista = carregarLista();
+  lista.unshift(boletim);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  mostrarToast('✅ Boletim salvo com sucesso!', 'success');
+}
+
+function limparFormulario(){
+  if(!confirm('Deseja limpar todos os campos do formulário?')) return;
+
+  document.querySelectorAll('input[type="text"], input[type="number"], textarea').forEach(i => i.value = '');
+  document.querySelectorAll('.toggle').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.checkLinha').forEach(l => l.classList.remove('has-ok','has-nc'));
+  document.querySelectorAll('input[name="combustivel"]').forEach(r => r.checked = false);
+  document.querySelectorAll('input.error, textarea.error').forEach(i => i.classList.remove('error'));
+
+  definirDataHoje();
+  mostrarToast('🧹 Formulário limpo.', 'info');
+}
+
+/* ============================================================
+   HISTÓRICO
+   ============================================================ */
+function carregarLista(){
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+  } catch { return []; }
+}
+
+function carregarHistorico(){
+  const busca = (document.getElementById('buscaHistorico')?.value || '').toLowerCase().trim();
+  let lista = carregarLista();
+
+  if(busca){
+    lista = lista.filter(b => {
+      const t = `${b.identificacao.motorista} ${b.identificacao.veiculo} ${b.identificacao.placa} ${b.identificacao.data}`.toLowerCase();
+      return t.includes(busca);
+    });
+  }
+
+  const container = document.getElementById('listaHistorico');
+
+  if(lista.length === 0){
+    container.innerHTML = `<div class="vazioMsg">📭 Nenhum boletim ${busca ? 'encontrado para essa busca' : 'salvo ainda'}.</div>`;
+    return;
+  }
+
+  container.innerHTML = lista.map(b => {
+    const totalNC = Object.values(b.checklist).filter(v => v === 'NC').length;
+    const totalOK = Object.values(b.checklist).filter(v => v === 'OK').length;
+    const dataFormatada = formatarData(b.identificacao.data, b.dataHora);
+
+    return `
+      <div class="itemHistorico">
+        <div class="cabecalhoItem">
+          <div class="dataItem">📅 ${dataFormatada} — ${b.identificacao.motorista || 'Sem motorista'}</div>
+          <div>
+            <span class="badge ok">${totalOK} OK</span>
+            <span class="badge nc">${totalNC} NC</span>
+          </div>
+        </div>
+        <div class="resumoItem">
+          <strong>Veículo:</strong> ${b.identificacao.veiculo || '—'} • <strong>Placa:</strong> ${b.identificacao.placa || '—'}<br>
+          <strong>KM:</strong> ${b.identificacao.kmInicial || '—'} → ${b.identificacao.kmFinal || '—'} (${b.identificacao.kmRodadaDia || '—'} km)<br>
+          <strong>Combustível:</strong> ${b.combustivel || 'Não informado'}
+          ${b.observacoes ? `<br><strong>Obs.:</strong> ${escapeHtml(b.observacoes).slice(0,120)}${b.observacoes.length>120?'...':''}` : ''}
+        </div>
+        <div class="acoesItem">
+          <button class="secundario pequeno" onclick="copiarBoletim(${b.id})">📋 Copiar</button>
+          <button class="pdf pequeno" onclick="gerarPDFHistorico(${b.id})">📄 PDF</button>
+          <button class="perigo pequeno" onclick="apagarBoletim(${b.id})">🗑️ Excluir</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function apagarBoletim(id){
+  if(!confirm('Deseja realmente excluir este boletim?')) return;
+  const lista = carregarLista().filter(b => b.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
+  carregarHistorico();
+  mostrarToast('🗑️ Boletim excluído.', 'info');
+}
+
+function apagarTodoHistorico(){
+  if(!confirm('⚠️ Tem certeza? Isso apagará TODOS os boletins permanentemente.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  carregarHistorico();
+  mostrarToast('Histórico completamente apagado.', 'info');
+}
+
+/* ============================================================
+   TEXTO WHATSAPP
+   ============================================================ */
+function textoWhatsApp(b){
+  const itemLinha = (id, label) => {
+    const v = b.checklist[id];
+    const icon = v === 'OK' ? '✅' : v === 'NC' ? '❌' : '⬜';
+    return `${icon} ${label}`;
+  };
+
+  return [
+    '*⚡ POWER ELECTRONIC ⚡*',
+    '_Boletim Diário e Checklist Automotivo_',
+    '',
+    `*📅 Data:* ${formatarDataSimples(b.identificacao.data)}`,
+    `*🕐 Início:* ${b.identificacao.horaInicio || '—'}   *Fim:* ${b.identificacao.horaFim || '—'}`,
+    `*👤 Motorista:* ${b.identificacao.motorista}`,
+    `*🚗 Veículo:* ${b.identificacao.veiculo} — *Placa:* ${b.identificacao.placa}`,
+    `*🛣️ KM:* ${b.identificacao.kmInicial || '—'} → ${b.identificacao.kmFinal || '—'} (${b.identificacao.kmRodadaDia || '—'} km no dia)`,
+    `*⛽ Combustível:* ${b.combustivel || 'não informado'}`,
+    '',
+    '*✅ CHECKLIST*',
+    ...CHECKLIST_ITEMS.map(i => itemLinha(i.id, i.label)),
+    '',
+    '*📝 OBSERVAÇÕES*',
+    b.observacoes || '_Sem observações._',
+    '',
+    '_Gerado por Power Electronic — Auto Elétrica e Automotivo_',
+    '_(15) 97404-3309_'
+  ].join('\n');
+}
+
+function copiarBoletimAtual(){
+  const b = coletarBoletim();
+  const erros = validarBoletim(b);
+  if(erros.length){
+    mostrarToast('⚠️ Preencha o boletim antes de copiar.', 'warning');
+    return;
+  }
+  copiarParaClipboard(textoWhatsApp(b));
+}
+
+function copiarBoletim(id){
+  const b = carregarLista().find(x => x.id === id);
+  if(!b) return;
+  copiarParaClipboard(textoWhatsApp(b));
+}
+
+function copiarParaClipboard(texto){
+  navigator.clipboard.writeText(texto)
+    .then(() => mostrarToast('📋 Copiado! Cole no WhatsApp.', 'success'))
+    .catch(() => mostrarToast('❌ Erro ao copiar.', 'error'));
+}
+
+/* ============================================================
+   PDF
+   ============================================================ */
+function gerarPDFAtual(){
+  const b = coletarBoletim();
+  const erros = validarBoletim(b);
+  if(erros.length){
+    mostrarToast('⚠️ Preencha o boletim antes de gerar o PDF.', 'warning');
+    return;
+  }
+  gerarPDFDeBoletim(b);
+}
+
+function gerarPDFHistorico(id){
+  const b = carregarLista().find(x => x.id === id);
+  if(b) gerarPDFDeBoletim(b);
+}
+
+function gerarPDFDeBoletim(b){
+  const area = document.getElementById('areaImpressao');
+  area.innerHTML = montarHTMLPDF(b);
+
+  const nomeArquivo = `boletim-${(b.identificacao.placa||'veiculo').replace(/[^A-Za-z0-9]/g,'')}-${b.identificacao.data || 'sem-data'}.pdf`;
+
+  html2pdf(area, {
+    margin: 10,
+    filename: nomeArquivo,
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale:2, useCORS:true, backgroundColor:'#ffffff' },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  });
+}
+
+function montarHTMLPDF(b){
+  const linhaCheck = (id, label) => {
+    const v = b.checklist[id];
+    const cls = v === 'OK' ? 'status-OK' : v === 'NC' ? 'status-NC' : '';
+    const txt = v || '—';
+    return `<tr><td>${label}</td><td class="${cls}"><strong>${txt}</strong></td></tr>`;
+  };
+
+  return `
+  <div class="pdfDoc">
+    <h2>⚡ POWER ELECTRONIC ⚡</h2>
+    <div class="sub">Auto Elétrica e Automotivo • Rua Comandante Salgado, 1301 — Sorocaba/SP • (15) 97404-3309</div>
+
+    <h3>Boletim Diário e Checklist Automotivo</h3>
+
+    <table>
+      <tr><th>Data</th><td>${formatarDataSimples(b.identificacao.data)}</td>
+          <th>Hora Início / Fim</th><td>${b.identificacao.horaInicio || '—'} — ${b.identificacao.horaFim || '—'}</td></tr>
+      <tr><th>Motorista</th><td colspan="3">${b.identificacao.motorista || '—'}</td></tr>
+      <tr><th>Veículo / Modelo</th><td>${b.identificacao.veiculo || '—'}</td>
+          <th>Placa</th><td>${b.identificacao.placa || '—'}</td></tr>
+      <tr><th>Hodômetro Inicial</th><td>${b.identificacao.kmInicial || '—'} km</td>
+          <th>Hodômetro Final</th><td>${b.identificacao.kmFinal || '—'} km</td></tr>
+      <tr><th>KM Rodada no Dia</th><td>${b.identificacao.kmRodadaDia || '—'} km</td>
+          <th>Combustível</th><td>${b.combustivel || '—'}</td></tr>
+    </table>
+
+    <h3>Checklist de Inspeção</h3>
+    <table class="checkTable">
+      <thead><tr><th style="width:75%">Item</th><th style="width:25%">Status</th></tr></thead>
+      <tbody>
+        ${CHECKLIST_ITEMS.map(i => linhaCheck(i.id, i.label)).join('')}
+      </tbody>
+    </table>
+
+    <h3>Observações / Ações Corretivas</h3>
+    <div class="obsBox">${escapeHtml(b.observacoes) || '— Sem observações.'}</div>
+
+    <div class="assinatura">
+      Assinatura do Motorista / Responsável<br>
+      <em>${b.identificacao.motorista || ''}</em>
+    </div>
+  </div>`;
+}
+
+/* ============================================================
+   UTILITÁRIOS
+   ============================================================ */
+function formatarData(iso, fallback){
+  if(!iso) return new Date(fallback).toLocaleString('pt-BR');
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function formatarDataSimples(iso){
+  if(!iso) return '—';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y}`;
+}
+function escapeHtml(s){
+  return String(s || '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+function mostrarToast(msg, tipo = 'success'){
+  const t = document.createElement('div');
+  t.className = `toast ${tipo}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 350);
+  }, 3200);
+}
+</script>
+</body>
+</html>
